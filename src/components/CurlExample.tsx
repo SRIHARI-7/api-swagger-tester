@@ -37,34 +37,34 @@ export const CurlExample: React.FC<CurlExampleProps> = ({
   
   return (
     <div className="border border-slate-200 rounded-md overflow-hidden">
-      <div className="bg-slate-800 text-white p-3 flex justify-between items-center">
+      <div className="bg-slate-800 text-white p-2 flex justify-between items-center">
         <div className="flex items-center gap-2">
           <Code className="h-4 w-4" />
-          <span className="font-medium">CURL REQUEST</span>
+          <span className="font-medium text-sm">CURL REQUEST</span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={copyToClipboard} 
+            className="text-white hover:bg-slate-700 h-7 px-2"
+          >
+            <Copy className="h-3 w-3" />
+          </Button>
           <Button 
             variant="ghost" 
             size="sm" 
             onClick={() => setExpanded(!expanded)} 
-            className="text-white hover:bg-slate-700"
+            className="text-white hover:bg-slate-700 h-7 px-2"
           >
-            <ChevronDown className={`h-4 w-4 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+            <ChevronDown className={`h-3 w-3 transition-transform ${expanded ? 'rotate-180' : ''}`} />
           </Button>
         </div>
       </div>
       
       {expanded && (
-        <div className="bg-slate-900 text-slate-300 p-4 text-sm font-mono relative">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={copyToClipboard} 
-            className="absolute top-2 right-2 text-slate-400 hover:text-white hover:bg-slate-800"
-          >
-            <Copy className="h-4 w-4" />
-          </Button>
-          <pre className="whitespace-pre-wrap">{curlCommand}</pre>
+        <div className="bg-slate-900 text-slate-300 p-3 text-sm font-mono">
+          <pre className="whitespace-pre-wrap text-xs">{curlCommand}</pre>
         </div>
       )}
     </div>

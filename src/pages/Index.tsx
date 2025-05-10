@@ -61,32 +61,13 @@ const Index = () => {
           
           {/* Main Content */}
           <div className="flex-1 flex">
-            {/* Documentation */}
-            <div className="flex-1 border-r border-slate-200">
+            {/* Documentation and Input Fields */}
+            <div className="flex-1">
               <ScrollArea className="h-[calc(100vh-3.5rem)]">
                 <div className="p-6">
                   <EndpointDetail />
-                </div>
-              </ScrollArea>
-            </div>
-            
-            {/* Try It Section */}
-            <div className="w-[500px] border-l border-slate-200 bg-white">
-              <ScrollArea className="h-[calc(100vh-3.5rem)]">
-                <div className="p-6 space-y-6">
-                  <LanguageSelector selected={language} onSelect={setLanguage} />
                   
-                  <Credentials type="OAuth2" token={token} onTokenChange={handleTokenChange} />
-                  
-                  <CurlExample 
-                    method="POST"
-                    endpoint="/pet"
-                    baseUrl={baseUrl}
-                    headers={headers}
-                  />
-                  
-                  <div>
-                    <h2 className="text-lg font-semibold mb-2">Try It</h2>
+                  <div className="mt-6">
                     <RequestPanel 
                       onResponse={(data, status, time) => {
                         setResponseData(data);
@@ -97,8 +78,39 @@ const Index = () => {
                       onTokenChange={handleTokenChange}
                     />
                   </div>
+                </div>
+              </ScrollArea>
+            </div>
+            
+            {/* Try It Section */}
+            <div className="w-[400px] border-l border-slate-200 bg-white">
+              <ScrollArea className="h-[calc(100vh-3.5rem)]">
+                <div className="p-4 space-y-6">
+                  <Credentials type="OAuth2" token={token} onTokenChange={handleTokenChange} />
                   
-                  <div>
+                  <LanguageSelector selected={language} onSelect={setLanguage} />
+                  
+                  <CurlExample 
+                    method="POST"
+                    endpoint="/pet"
+                    baseUrl={baseUrl}
+                    headers={headers}
+                  />
+                  
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <h3 className="text-sm font-semibold">Test Request</h3>
+                      <Button 
+                        onClick={() => {
+                          const requestPanelElement = document.getElementById('request-panel-submit');
+                          if (requestPanelElement) requestPanelElement.click();
+                        }}
+                        size="sm"
+                      >
+                        Send Request
+                      </Button>
+                    </div>
+                    
                     <ResponsePanel 
                       data={responseData} 
                       status={responseStatus} 

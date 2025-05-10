@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
-import { RequestParams } from "@/types/api";
+import { RequestParams, SchemaProperty } from "@/types/api";
 import { useForm } from "react-hook-form";
 import { Info } from "lucide-react";
 
@@ -211,7 +211,7 @@ export const RequestPanel: React.FC<{
   const bodySchema = selectedEndpoint.request_body?.content?.["application/json"]?.schema;
   const requiredFields = bodySchema?.required || [];
   
-  const renderFormField = (fieldName: string, fieldSchema: any, parentPath = "") => {
+  const renderFormField = (fieldName: string, fieldSchema: SchemaProperty, parentPath = "") => {
     const fullPath = parentPath ? `${parentPath}.${fieldName}` : fieldName;
     const isRequired = requiredFields.includes(fieldName);
     
@@ -255,11 +255,14 @@ export const RequestPanel: React.FC<{
     if (fieldSchema.type === "object" && fieldSchema.properties) {
       // Render object fields
       return (
-        <div key={fullPath} className="mb-4">
-          <h4 className="text-sm font-medium">{fieldName} {isRequired && <span className="text-red-500">*</span>}</h4>
-          <div className="pl-4 border-l-2 border-slate-200 mt-2">
-            {Object.entries(fieldSchema.properties).map(([propName, propSchema]) => 
-              renderFormField(propName, propSchema, fullPath)
+        <div key={fullPath} className="mb-4 border p-3 rounded-lg border-slate-200">
+          <h4 className="text-sm font-medium flex items-center">
+            {fieldName} 
+            {isRequired && <span className="text-red-500 ml-1">*</span>}
+          </h4>
+          <div className="pl-4 border-l-2 border-slate-200 mt-2 space-y-2">
+            {Object.entries(fieldSchema.properties || {}).map(([propName, propSchema]) => 
+              renderFormField(propName, propSchema as SchemaProperty, fullPath)
             )}
           </div>
         </div>
@@ -268,8 +271,8 @@ export const RequestPanel: React.FC<{
       // For simplicity, we're not handling complex arrays - would need more advanced UI
       return (
         <div key={fullPath} className="mb-2">
-          <Label className="block text-xs mb-1">
-            {fieldName} {isRequired && <span className="text-red-500">*</span>}
+          <Label className="block text-xs mb-1 flex items-center">
+            {fieldName} {isRequired && <span className="text-red-500 ml-1">*</span>}
           </Label>
           <Textarea 
             value={JSON.stringify(currentValue || [], null, 2)}
@@ -283,7 +286,7 @@ export const RequestPanel: React.FC<{
               }
             }}
             placeholder={`[${fieldSchema.items?.type || ""}]`}
-            className="font-mono text-sm"
+            className={`font-mono text-sm ${isRequired ? "border-red-200" : ""}`}
           />
         </div>
       );
@@ -291,8 +294,8 @@ export const RequestPanel: React.FC<{
       // Render select for enum fields
       return (
         <div key={fullPath} className="mb-2">
-          <Label className="block text-xs mb-1">
-            {fieldName} {isRequired && <span className="text-red-500">*</span>}
+          <Label className="block text-xs mb-1 flex items-center">
+            {fieldName} {isRequired && <span className="text-red-500 ml-1">*</span>}
             {fieldSchema.description && (
               <Popover>
                 <PopoverTrigger asChild>
@@ -308,11 +311,11 @@ export const RequestPanel: React.FC<{
             value={currentValue || ""} 
             onValueChange={setValue}
           >
-            <SelectTrigger className="w-full">
+            <SelectTrigger className={`w-full ${isRequired ? "border-red-200" : ""}`}>
               <SelectValue placeholder="Select value" />
             </SelectTrigger>
             <SelectContent>
-              {fieldSchema.enum.map((option: string) => (
+              {fieldSchema.enum?.map((option: string) => (
                 <SelectItem key={option} value={option}>
                   {option}
                 </SelectItem>
@@ -325,14 +328,14 @@ export const RequestPanel: React.FC<{
       // Render checkbox or select for boolean
       return (
         <div key={fullPath} className="mb-2">
-          <Label className="block text-xs mb-1">
-            {fieldName} {isRequired && <span className="text-red-500">*</span>}
+          <Label className="block text-xs mb-1 flex items-center">
+            {fieldName} {isRequired && <span className="text-red-500 ml-1">*</span>}
           </Label>
           <Select 
             value={currentValue?.toString() || "false"} 
             onValueChange={(value) => setValue(value === "true")}
           >
-            <SelectTrigger className="w-full">
+            <SelectTrigger className={`w-full ${isRequired ? "border-red-200" : ""}`}>
               <SelectValue placeholder="Select value" />
             </SelectTrigger>
             <SelectContent>
@@ -352,7 +355,7 @@ export const RequestPanel: React.FC<{
       return (
         <div key={fullPath} className="mb-2">
           <Label className="block text-xs mb-1 flex items-center">
-            {fieldName} {isRequired && <span className="text-red-500">*</span>}
+            {fieldName} {isRequired && <span className="text-red-500 ml-1">*</span>}
             <span className="ml-1 text-slate-400">{fieldSchema.type}</span>
             {fieldSchema.description && (
               <Popover>
@@ -380,7 +383,7 @@ export const RequestPanel: React.FC<{
   return (
     <div className="border border-slate-200 rounded-md overflow-hidden">
       <div className="bg-slate-50 p-4 border-b border-slate-200">
-        <h3 className="font-medium">Request</h3>
+        <h3 className="font-medium">Request Parameters</h3>
         <div className="mt-2 text-sm font-mono break-all">{url}</div>
       </div>
       
@@ -406,8 +409,8 @@ export const RequestPanel: React.FC<{
                 
                 return (
                   <div key={key} className="mb-2">
-                    <Label className="block text-xs mb-1">
-                      {key} {isRequired && <span className="text-red-500">*</span>}
+                    <Label className="block text-xs mb-1 flex items-center">
+                      {key} {isRequired && <span className="text-red-500 ml-1">*</span>}
                     </Label>
                     <Input
                       value={value}
@@ -430,8 +433,8 @@ export const RequestPanel: React.FC<{
                 
                 return (
                   <div key={key} className="mb-2">
-                    <Label className="block text-xs mb-1">
-                      {key} {isRequired && <span className="text-red-500">*</span>}
+                    <Label className="block text-xs mb-1 flex items-center">
+                      {key} {isRequired && <span className="text-red-500 ml-1">*</span>}
                     </Label>
                     <Input
                       value={value}
@@ -508,26 +511,8 @@ export const RequestPanel: React.FC<{
                 <div className="mb-4 space-y-4">
                   <h4 className="text-sm font-medium mb-2">Body Parameters</h4>
                   {Object.entries(bodySchema.properties).map(([fieldName, fieldSchema]) => 
-                    renderFormField(fieldName, fieldSchema)
+                    renderFormField(fieldName, fieldSchema as SchemaProperty)
                   )}
-                  
-                  <div>
-                    <Label className="block text-xs mb-1">Raw JSON</Label>
-                    <Textarea
-                      value={bodyContent}
-                      onChange={(e) => {
-                        setBodyContent(e.target.value);
-                        try {
-                          const parsed = JSON.parse(e.target.value);
-                          setBodyFormValues(parsed);
-                        } catch (e) {
-                          // Invalid JSON, don't update form values
-                        }
-                      }}
-                      placeholder="Enter JSON body"
-                      className="w-full h-24 p-2 font-mono text-sm"
-                    />
-                  </div>
                 </div>
               ) : (
                 <textarea
@@ -548,11 +533,12 @@ export const RequestPanel: React.FC<{
       
       <div className="p-4 border-t border-slate-200 bg-slate-50">
         <Button 
+          id="request-panel-submit"
           onClick={handleRequestSubmit}
           disabled={isLoading}
           className="w-full"
         >
-          {isLoading ? "Sending..." : `Send ${selectedEndpoint.method} Request`}
+          {isLoading ? "Sending..." : `Execute ${selectedEndpoint.method} Request`}
         </Button>
       </div>
     </div>

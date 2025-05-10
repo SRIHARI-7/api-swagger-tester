@@ -5,6 +5,7 @@ export interface SchemaProperty {
   enum?: string[];
   properties?: Record<string, SchemaProperty>;
   items?: SchemaProperty;
+  required?: string[]; // Add required property
 }
 
 export interface ParamSchema {

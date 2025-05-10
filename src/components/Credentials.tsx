@@ -35,28 +35,25 @@ export const Credentials: React.FC<CredentialsProps> = ({
   };
   
   return (
-    <div className="mb-4">
-      <div className="flex justify-between items-center mb-2">
-        <h3 className="text-xs font-medium text-slate-500 uppercase">CREDENTIALS</h3>
+    <div className="mb-3">
+      <div className="flex justify-between items-center mb-1">
+        <h3 className="text-xs font-medium text-slate-500 uppercase">AUTHORIZATION</h3>
         <span className="text-xs text-slate-500">{type}</span>
       </div>
-      <div className="p-4 border rounded-md">
-        <h4 className="text-sm font-medium mb-2 text-center">{type}</h4>
-        <div className="flex">
-          <Input 
-            value={token} 
-            onChange={handleTokenChange}
-            className="font-mono text-sm"
-          />
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={copyToClipboard} 
-            className="ml-2"
-          >
-            <Copy className="h-4 w-4" />
-          </Button>
-        </div>
+      <div className="flex">
+        <Input 
+          value={token} 
+          onChange={handleTokenChange}
+          className="font-mono text-sm"
+        />
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={copyToClipboard} 
+          className="ml-1"
+        >
+          <Copy className="h-4 w-4" />
+        </Button>
       </div>
     </div>
   );
