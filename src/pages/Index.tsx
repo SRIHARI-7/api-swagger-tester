@@ -7,12 +7,17 @@ import { RequestPanel } from "@/components/RequestPanel";
 import { ResponsePanel } from "@/components/ResponsePanel";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { CurlExample } from "@/components/CurlExample";
+import { LanguageSelector } from "@/components/LanguageSelector";
+import { Credentials } from "@/components/Credentials";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const Index = () => {
   const [responseData, setResponseData] = useState<any>(null);
   const [responseStatus, setResponseStatus] = useState<number | null>(null);
   const [responseTime, setResponseTime] = useState<number | null>(null);
   const [baseUrl, setBaseUrl] = useState("https://example.com/api/v3");
+  const [language, setLanguage] = useState<"shell" | "node" | "ruby" | "php" | "python">("shell");
 
   return (
     <ApiProvider>
@@ -41,31 +46,55 @@ const Index = () => {
           <Sidebar />
           
           {/* Main Content */}
-          <div className="flex-1 overflow-y-auto">
-            <div className="p-6 grid grid-cols-1 gap-6">
-              <div className="col-span-1">
-                <EndpointDetail />
-              </div>
-              
-              <div className="col-span-1">
-                <h2 className="text-lg font-semibold mb-2">Try It</h2>
-                <RequestPanel 
-                  onResponse={(data, status, time) => {
-                    setResponseData(data);
-                    setResponseStatus(status);
-                    setResponseTime(time);
-                  }} 
-                />
-              </div>
-              
-              <div className="col-span-1">
-                <h2 className="text-lg font-semibold mb-2">Response</h2>
-                <ResponsePanel 
-                  data={responseData} 
-                  status={responseStatus} 
-                  time={responseTime} 
-                />
-              </div>
+          <div className="flex-1 flex">
+            {/* Documentation */}
+            <div className="flex-1 border-r border-slate-200">
+              <ScrollArea className="h-[calc(100vh-3.5rem)]">
+                <div className="p-6">
+                  <EndpointDetail />
+                </div>
+              </ScrollArea>
+            </div>
+            
+            {/* Try It Section */}
+            <div className="w-[500px] border-l border-slate-200 bg-white">
+              <ScrollArea className="h-[calc(100vh-3.5rem)]">
+                <div className="p-6 space-y-6">
+                  <LanguageSelector selected={language} onSelect={setLanguage} />
+                  
+                  <Credentials type="OAuth2" />
+                  
+                  <CurlExample 
+                    method="POST"
+                    endpoint="/pet"
+                    baseUrl={baseUrl}
+                    headers={{
+                      "accept": "application/json",
+                      "authorization": "Bearer gyuyuyiguububuibiu",
+                      "content-type": "application/json"
+                    }}
+                  />
+                  
+                  <div>
+                    <h2 className="text-lg font-semibold mb-2">Try It</h2>
+                    <RequestPanel 
+                      onResponse={(data, status, time) => {
+                        setResponseData(data);
+                        setResponseStatus(status);
+                        setResponseTime(time);
+                      }} 
+                    />
+                  </div>
+                  
+                  <div>
+                    <ResponsePanel 
+                      data={responseData} 
+                      status={responseStatus} 
+                      time={responseTime} 
+                    />
+                  </div>
+                </div>
+              </ScrollArea>
             </div>
           </div>
         </div>
