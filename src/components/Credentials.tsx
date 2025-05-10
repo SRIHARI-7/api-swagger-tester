@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Copy } from "lucide-react";
@@ -8,13 +8,16 @@ import { useToast } from "@/components/ui/use-toast";
 interface CredentialsProps {
   type: string;
   token?: string;
+  onTokenChange?: (token: string) => void;
 }
 
 export const Credentials: React.FC<CredentialsProps> = ({ 
   type = "OAuth2",
-  token = "Bearer gyuyuyiguububuibiu" 
+  token: initialToken = "Bearer gyuyuyiguububuibiu",
+  onTokenChange
 }) => {
   const { toast } = useToast();
+  const [token, setToken] = useState(initialToken);
   
   const copyToClipboard = () => {
     navigator.clipboard.writeText(token);
@@ -22,6 +25,13 @@ export const Credentials: React.FC<CredentialsProps> = ({
       title: "Copied to clipboard",
       description: "The token has been copied to your clipboard.",
     });
+  };
+  
+  const handleTokenChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setToken(e.target.value);
+    if (onTokenChange) {
+      onTokenChange(e.target.value);
+    }
   };
   
   return (
@@ -35,7 +45,7 @@ export const Credentials: React.FC<CredentialsProps> = ({
         <div className="flex">
           <Input 
             value={token} 
-            readOnly 
+            onChange={handleTokenChange}
             className="font-mono text-sm"
           />
           <Button 

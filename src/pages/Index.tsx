@@ -18,6 +18,20 @@ const Index = () => {
   const [responseTime, setResponseTime] = useState<number | null>(null);
   const [baseUrl, setBaseUrl] = useState("https://example.com/api/v3");
   const [language, setLanguage] = useState<"shell" | "node" | "ruby" | "php" | "python">("shell");
+  const [token, setToken] = useState("Bearer gyuyuyiguububuibiu");
+  const [headers, setHeaders] = useState<Record<string, string>>({
+    "accept": "application/json",
+    "authorization": "Bearer gyuyuyiguububuibiu",
+    "content-type": "application/json"
+  });
+
+  const handleTokenChange = (newToken: string) => {
+    setToken(newToken);
+    setHeaders(prev => ({
+      ...prev,
+      "authorization": newToken
+    }));
+  };
 
   return (
     <ApiProvider>
@@ -62,17 +76,13 @@ const Index = () => {
                 <div className="p-6 space-y-6">
                   <LanguageSelector selected={language} onSelect={setLanguage} />
                   
-                  <Credentials type="OAuth2" />
+                  <Credentials type="OAuth2" token={token} onTokenChange={handleTokenChange} />
                   
                   <CurlExample 
                     method="POST"
                     endpoint="/pet"
                     baseUrl={baseUrl}
-                    headers={{
-                      "accept": "application/json",
-                      "authorization": "Bearer gyuyuyiguububuibiu",
-                      "content-type": "application/json"
-                    }}
+                    headers={headers}
                   />
                   
                   <div>
@@ -83,6 +93,8 @@ const Index = () => {
                         setResponseStatus(status);
                         setResponseTime(time);
                       }} 
+                      token={token}
+                      onTokenChange={handleTokenChange}
                     />
                   </div>
                   
