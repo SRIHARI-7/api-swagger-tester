@@ -9,24 +9,55 @@ interface CurlExampleProps {
   endpoint: string;
   baseUrl: string;
   headers: Record<string, string>;
+  bodyParams?: Record<string, any>;
+  queryParams?: Record<string, string>;
+  pathParams?: Record<string, string>;
 }
 
 export const CurlExample: React.FC<CurlExampleProps> = ({
   method,
   endpoint,
   baseUrl,
-  headers
+  headers,
+  bodyParams,
+  queryParams,
+  pathParams
 }) => {
   const [expanded, setExpanded] = useState(true);
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
   
-  const fullUrl = `${baseUrl}${endpoint}`;
+  // Process endpoint with path parameters
+  let processedEndpoint = endpoint;
+  if (pathParams) {
+    Object.entries(pathParams).forEach(([key, value]) => {
+      if (value) {
+        processedEndpoint = processedEndpoint.replace(`{${key}}`, encodeURIComponent(String(value)));
+      }
+    });
+  }
+
+  // Add query parameters if present
+  const queryString = queryParams 
+    ? Object.entries(queryParams)
+      .filter(([_, value]) => value && value.trim() !== '')
+      .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+      .join('&')
+    : '';
+    
+  const fullUrl = `${baseUrl}${processedEndpoint}${queryString ? `?${queryString}` : ''}`;
   
   // Generate curl command
-  const curlCommand = `curl --request ${method} \\
+  let curlCommand = `curl --request ${method} \\
   --url ${fullUrl} \\${Object.entries(headers).map(([key, value]) => `
   --header '${key}: ${value}' \\`).join('')}`;
+  
+  // Add body if it's a POST, PUT, PATCH
+  if (["POST", "PUT", "PATCH"].includes(method) && bodyParams) {
+    const bodyContent = JSON.stringify(bodyParams, null, 2);
+    curlCommand += `
+  --data '${bodyContent}'`;
+  }
   
   const copyToClipboard = () => {
     navigator.clipboard.writeText(curlCommand);
@@ -43,7 +74,7 @@ export const CurlExample: React.FC<CurlExampleProps> = ({
     <div className="border border-slate-200 rounded-md overflow-hidden">
       <div className="bg-slate-800 text-white p-3 flex justify-between items-center">
         <div className="flex items-center gap-2">
-          <span className="uppercase font-medium text-sm">HTTPie REQUEST</span>
+          <span className="uppercase font-medium text-sm">CURL REQUEST</span>
           <Button 
             variant="ghost" 
             size="sm" 

@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Copy, Lock } from "lucide-react";
@@ -19,6 +19,11 @@ export const Credentials: React.FC<CredentialsProps> = ({
   const { toast } = useToast();
   const [token, setToken] = useState(initialToken);
   
+  // Update local token when prop changes
+  useEffect(() => {
+    setToken(initialToken);
+  }, [initialToken]);
+  
   const copyToClipboard = () => {
     navigator.clipboard.writeText(token);
     toast({
@@ -28,9 +33,10 @@ export const Credentials: React.FC<CredentialsProps> = ({
   };
   
   const handleTokenChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setToken(e.target.value);
+    const newToken = e.target.value;
+    setToken(newToken);
     if (onTokenChange) {
-      onTokenChange(e.target.value);
+      onTokenChange(newToken);
     }
   };
   
@@ -58,7 +64,7 @@ export const Credentials: React.FC<CredentialsProps> = ({
             onClick={copyToClipboard} 
             className="absolute right-1 top-1/2 -translate-y-1/2"
           >
-            <Lock className="h-4 w-4" />
+            <Copy className="h-4 w-4" />
           </Button>
         </div>
       </div>

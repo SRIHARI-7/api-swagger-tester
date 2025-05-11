@@ -24,6 +24,11 @@ const Index = () => {
     "authorization": "Bearer gyuyuyiguububuibiu",
     "content-type": "application/json"
   });
+  const [bodyParams, setBodyParams] = useState<Record<string, any>>({});
+  const [pathParams, setPathParams] = useState<Record<string, string>>({});
+  const [queryParams, setQueryParams] = useState<Record<string, string>>({});
+  const [selectedMethod, setSelectedMethod] = useState<string>("GET");
+  const [selectedEndpoint, setSelectedEndpoint] = useState<string>("/pet");
 
   const handleTokenChange = (newToken: string) => {
     setToken(newToken);
@@ -31,6 +36,15 @@ const Index = () => {
       ...prev,
       "authorization": newToken
     }));
+  };
+
+  const handleParamsChange = (
+    type: 'body' | 'path' | 'query', 
+    params: Record<string, any>
+  ) => {
+    if (type === 'body') setBodyParams(params);
+    else if (type === 'path') setPathParams(params as Record<string, string>);
+    else if (type === 'query') setQueryParams(params as Record<string, string>);
   };
 
   return (
@@ -76,6 +90,9 @@ const Index = () => {
                       }} 
                       token={token}
                       onTokenChange={handleTokenChange}
+                      onParamsChange={handleParamsChange}
+                      onMethodChange={setSelectedMethod}
+                      onEndpointChange={setSelectedEndpoint}
                     />
                   </div>
                 </div>
@@ -90,17 +107,20 @@ const Index = () => {
                 <Credentials type="OAuth2" token={token} onTokenChange={handleTokenChange} />
                 
                 <CurlExample 
-                  method="POST"
-                  endpoint="/pet"
+                  method={selectedMethod}
+                  endpoint={selectedEndpoint}
                   baseUrl={baseUrl}
                   headers={headers}
+                  bodyParams={bodyParams}
+                  pathParams={pathParams}
+                  queryParams={queryParams}
                 />
                 
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <h3 className="text-sm font-semibold">RESPONSE</h3>
                     <Button 
-                      variant="primary" 
+                      variant="outline" 
                       size="sm"
                       className="bg-blue-500 hover:bg-blue-600 text-white"
                       onClick={() => {
