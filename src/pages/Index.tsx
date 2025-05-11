@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ApiProvider } from "@/contexts/ApiContext";
 import { Sidebar } from "@/components/Sidebar";
 import { EndpointDetail } from "@/components/EndpointDetail";
@@ -45,6 +45,10 @@ const Index = () => {
     if (type === 'body') setBodyParams(params);
     else if (type === 'path') setPathParams(params as Record<string, string>);
     else if (type === 'query') setQueryParams(params as Record<string, string>);
+  };
+
+  const handleHeadersChange = (newHeaders: Record<string, string>) => {
+    setHeaders(newHeaders);
   };
 
   const handleBaseUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -97,6 +101,7 @@ const Index = () => {
                       onParamsChange={handleParamsChange}
                       onMethodChange={setSelectedMethod}
                       onEndpointChange={setSelectedEndpoint}
+                      onHeadersChange={handleHeadersChange}
                     />
                   </div>
                 </div>

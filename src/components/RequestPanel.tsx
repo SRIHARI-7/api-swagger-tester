@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useApi } from "@/contexts/ApiContext";
 import { Button } from "@/components/ui/button";
@@ -9,14 +8,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
-import { RequestParams, SchemaProperty } from "@/types/api";
+import { SchemaProperty } from "@/types/api";
 import { Info, ChevronDown, Plus } from "lucide-react";
+
+// Import the RequestParams type from types/api.ts
+import type { RequestParams } from "@/types/api";
 
 export const RequestPanel: React.FC<{
   onResponse: (data: any, status: number, time: number) => void;
   token?: string;
   onTokenChange?: (token: string) => void;
   onParamsChange?: (type: 'body' | 'path' | 'query', params: Record<string, any>) => void;
+  onHeadersChange?: (headers: Record<string, string>) => void;
   onMethodChange?: React.Dispatch<React.SetStateAction<string>>;
   onEndpointChange?: React.Dispatch<React.SetStateAction<string>>;
 }> = ({ 
@@ -24,6 +27,7 @@ export const RequestPanel: React.FC<{
   token, 
   onTokenChange, 
   onParamsChange,
+  onHeadersChange,
   onMethodChange,
   onEndpointChange 
 }) => {
@@ -45,8 +49,16 @@ export const RequestPanel: React.FC<{
         ...prev,
         "authorization": token
       }));
+      
+      // Notify parent of headers change
+      if (onHeadersChange) {
+        onHeadersChange({
+          ...headers,
+          "authorization": token
+        });
+      }
     }
-  }, [token]);
+  }, [token, onHeadersChange]);
   
   // Notify parent component when parameters change
   useEffect(() => {
@@ -66,6 +78,13 @@ export const RequestPanel: React.FC<{
       onParamsChange('body', bodyFormValues);
     }
   }, [bodyFormValues, onParamsChange]);
+
+  // Notify parent of headers change
+  useEffect(() => {
+    if (onHeadersChange) {
+      onHeadersChange(headers);
+    }
+  }, [headers, onHeadersChange]);
 
   // Update method and endpoint in parent component
   useEffect(() => {
