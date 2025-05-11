@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useApi } from "@/contexts/ApiContext";
 import { Button } from "@/components/ui/button";
@@ -213,7 +214,11 @@ export const RequestPanel: React.FC<{
 
   // Update body content when form values change
   useEffect(() => {
-    setBodyContent(JSON.stringify(bodyFormValues, null, 2));
+    try {
+      setBodyContent(JSON.stringify(bodyFormValues, null, 2));
+    } catch (error) {
+      console.error("Error updating body content:", error);
+    }
   }, [bodyFormValues]);
   
   const handleRequestSubmit = async () => {
@@ -318,11 +323,29 @@ export const RequestPanel: React.FC<{
           // Handle nested properties
           const paths = parentPath.split('.');
           let current = newValues;
+          
+          // Handle array paths like "items[0]"
           for (let i = 0; i < paths.length; i++) {
-            if (i === paths.length - 1) {
-              current[paths[i]][fieldName] = value;
+            const path = paths[i];
+            
+            // Check if it's an array index
+            const arrayMatch = path.match(/^(.*)\[(\d+)\]$/);
+            if (arrayMatch) {
+              const arrayName = arrayMatch[1];
+              const index = parseInt(arrayMatch[2]);
+              
+              if (i === paths.length - 1) {
+                current[arrayName][index][fieldName] = value;
+              } else {
+                current = current[arrayName][index];
+              }
             } else {
-              current = current[paths[i]];
+              // Regular object path
+              if (i === paths.length - 1) {
+                current[path][fieldName] = value;
+              } else {
+                current = current[path];
+              }
             }
           }
         } else {
@@ -337,13 +360,26 @@ export const RequestPanel: React.FC<{
         // Handle nested properties
         const paths = parentPath.split('.');
         let current = bodyFormValues;
+        if (!current) return "";
+        
+        // Handle array paths like "items[0]"
         for (const path of paths) {
-          current = current[path];
-          if (!current) return "";
+          const arrayMatch = path.match(/^(.*)\[(\d+)\]$/);
+          if (arrayMatch) {
+            const arrayName = arrayMatch[1];
+            const index = parseInt(arrayMatch[2]);
+            
+            if (!current[arrayName] || !current[arrayName][index]) return "";
+            current = current[arrayName][index];
+          } else {
+            if (!current[path]) return "";
+            current = current[path];
+          }
         }
-        return current[fieldName];
+        
+        return current[fieldName] !== undefined ? current[fieldName] : "";
       }
-      return bodyFormValues[fieldName];
+      return bodyFormValues[fieldName] !== undefined ? bodyFormValues[fieldName] : "";
     };
     
     const currentValue = getValue();
@@ -400,7 +436,7 @@ export const RequestPanel: React.FC<{
             {arrayValue.map((value, index) => (
               <div key={index} className="flex mb-2">
                 <Input
-                  value={value}
+                  value={value !== undefined ? value : ""}
                   onChange={(e) => {
                     const newArray = [...arrayValue];
                     newArray[index] = e.target.value;
@@ -531,7 +567,7 @@ export const RequestPanel: React.FC<{
             )}
           </Label>
           <Select 
-            value={currentValue || ""} 
+            value={currentValue !== undefined ? String(currentValue) : ""} 
             onValueChange={setValue}
           >
             <SelectTrigger className={`w-full ${isRequired ? "border-red-200" : ""}`}>
@@ -556,7 +592,7 @@ export const RequestPanel: React.FC<{
             <span className="ml-2 text-xs text-slate-400">boolean</span>
           </Label>
           <Select 
-            value={currentValue?.toString() || "false"} 
+            value={currentValue !== undefined ? String(currentValue) : "false"} 
             onValueChange={(value) => setValue(value === "true")}
           >
             <SelectTrigger className={`w-full ${isRequired ? "border-red-200" : ""}`}>
@@ -595,8 +631,13 @@ export const RequestPanel: React.FC<{
           </Label>
           <Input
             type={inputType}
-            value={currentValue !== undefined ? currentValue : ""}
-            onChange={(e) => setValue(inputType === "number" ? Number(e.target.value) : e.target.value)}
+            value={currentValue !== undefined ? String(currentValue) : ""}
+            onChange={(e) => {
+              const newValue = inputType === "number" ? 
+                (e.target.value === "" ? 0 : Number(e.target.value)) : 
+                e.target.value;
+              setValue(newValue);
+            }}
             placeholder={fieldName}
             className={isRequired ? "border-red-200" : ""}
           />
@@ -641,7 +682,7 @@ export const RequestPanel: React.FC<{
                       </span>
                     </Label>
                     <Input
-                      value={value}
+                      value={value !== undefined ? value : ""}
                       onChange={(e) => {
                         const newValue = e.target.value;
                         setPathParams(prev => {
@@ -674,7 +715,7 @@ export const RequestPanel: React.FC<{
                       </span>
                     </Label>
                     <Input
-                      value={value}
+                      value={value !== undefined ? value : ""}
                       onChange={(e) => {
                         const newValue = e.target.value;
                         setQueryParams(prev => {
@@ -703,7 +744,7 @@ export const RequestPanel: React.FC<{
             {Object.entries(headers).map(([key, value], index) => (
               <div key={index} className="flex gap-2">
                 <Input
-                  value={key}
+                  value={key !== undefined ? key : ""}
                   onChange={(e) => {
                     const newHeaders = { ...headers };
                     delete newHeaders[key];
@@ -714,7 +755,7 @@ export const RequestPanel: React.FC<{
                   className="w-1/3"
                 />
                 <Input
-                  value={value}
+                  value={value !== undefined ? value : ""}
                   onChange={(e) => {
                     setHeaders(prev => ({ ...prev, [key]: e.target.value }));
                     if (key === "authorization" && onTokenChange) {

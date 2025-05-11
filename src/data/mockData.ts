@@ -1,5 +1,4 @@
-
-import { ApiResponse } from "../types/api";
+import type { Endpoint, RequestParams } from "@/types/api";
 
 export const mockApiData: ApiResponse = {
   endpoints: [
