@@ -59,10 +59,10 @@ const Index = () => {
           {/* Sidebar */}
           <Sidebar />
           
-          {/* Main Content */}
+          {/* Main Content - Split into Documentation/Input and Try It sections */}
           <div className="flex-1 flex">
             {/* Documentation and Input Fields */}
-            <div className="flex-1">
+            <div className="flex-1 overflow-hidden">
               <ScrollArea className="h-[calc(100vh-3.5rem)]">
                 <div className="p-6">
                   <EndpointDetail />
@@ -84,41 +84,41 @@ const Index = () => {
             
             {/* Try It Section */}
             <div className="w-[400px] border-l border-slate-200 bg-white">
-              <ScrollArea className="h-[calc(100vh-3.5rem)]">
-                <div className="p-4 space-y-6">
-                  <Credentials type="OAuth2" token={token} onTokenChange={handleTokenChange} />
-                  
-                  <LanguageSelector selected={language} onSelect={setLanguage} />
-                  
-                  <CurlExample 
-                    method="POST"
-                    endpoint="/pet"
-                    baseUrl={baseUrl}
-                    headers={headers}
-                  />
-                  
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <h3 className="text-sm font-semibold">Test Request</h3>
-                      <Button 
-                        onClick={() => {
-                          const requestPanelElement = document.getElementById('request-panel-submit');
-                          if (requestPanelElement) requestPanelElement.click();
-                        }}
-                        size="sm"
-                      >
-                        Send Request
-                      </Button>
-                    </div>
-                    
-                    <ResponsePanel 
-                      data={responseData} 
-                      status={responseStatus} 
-                      time={responseTime} 
-                    />
+              <div className="p-4 space-y-4">
+                <LanguageSelector selected={language} onSelect={setLanguage} />
+                
+                <Credentials type="OAuth2" token={token} onTokenChange={handleTokenChange} />
+                
+                <CurlExample 
+                  method="POST"
+                  endpoint="/pet"
+                  baseUrl={baseUrl}
+                  headers={headers}
+                />
+                
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-sm font-semibold">RESPONSE</h3>
+                    <Button 
+                      variant="primary" 
+                      size="sm"
+                      className="bg-blue-500 hover:bg-blue-600 text-white"
+                      onClick={() => {
+                        const requestPanelElement = document.getElementById('request-panel-submit');
+                        if (requestPanelElement) requestPanelElement.click();
+                      }}
+                    >
+                      Try It!
+                    </Button>
                   </div>
+                  
+                  <ResponsePanel 
+                    data={responseData} 
+                    status={responseStatus} 
+                    time={responseTime} 
+                  />
                 </div>
-              </ScrollArea>
+              </div>
             </div>
           </div>
         </div>

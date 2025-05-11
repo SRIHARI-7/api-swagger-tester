@@ -7,12 +7,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
 import { RequestParams, SchemaProperty } from "@/types/api";
-import { useForm } from "react-hook-form";
-import { Info } from "lucide-react";
+import { Info, ChevronDown, Plus } from "lucide-react";
 
 export const RequestPanel: React.FC<{
   onResponse: (data: any, status: number, time: number) => void;
@@ -29,6 +27,7 @@ export const RequestPanel: React.FC<{
     "accept": "application/json",
     "content-type": "application/json"
   });
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (token) {
@@ -85,8 +84,25 @@ export const RequestPanel: React.FC<{
         setBodyContent("");
         setBodyFormValues({});
       }
+      
+      // Default expand categories
+      if (selectedEndpoint.request_body?.content?.["application/json"]?.schema?.properties) {
+        const newExpandedCategories: Record<string, boolean> = {};
+        Object.keys(selectedEndpoint.request_body.content["application/json"].schema.properties).forEach(key => {
+          newExpandedCategories[key] = true;
+        });
+        setExpandedCategories(newExpandedCategories);
+      }
     }
   }, [selectedEndpoint]);
+  
+  // Toggle category expansion
+  const toggleCategory = (category: string) => {
+    setExpandedCategories(prev => ({
+      ...prev,
+      [category]: !prev[category]
+    }));
+  };
   
   // Create a template object from schema
   const createTemplateFromSchema = (schema: any): any => {
@@ -253,26 +269,153 @@ export const RequestPanel: React.FC<{
     const currentValue = getValue();
     
     if (fieldSchema.type === "object" && fieldSchema.properties) {
+      const isExpanded = expandedCategories[fullPath] !== false;
+      
       // Render object fields
       return (
-        <div key={fullPath} className="mb-4 border p-3 rounded-lg border-slate-200">
-          <h4 className="text-sm font-medium flex items-center">
-            {fieldName} 
-            {isRequired && <span className="text-red-500 ml-1">*</span>}
-          </h4>
-          <div className="pl-4 border-l-2 border-slate-200 mt-2 space-y-2">
-            {Object.entries(fieldSchema.properties || {}).map(([propName, propSchema]) => 
-              renderFormField(propName, propSchema as SchemaProperty, fullPath)
-            )}
+        <div key={fullPath} className="mb-4 border rounded-lg border-slate-200">
+          <div 
+            className="p-2 bg-slate-50 flex justify-between items-center cursor-pointer border-b border-slate-200"
+            onClick={() => toggleCategory(fullPath)}
+          >
+            <h4 className="text-sm font-medium flex items-center">
+              {fieldName} 
+              {isRequired && <span className="text-red-500 ml-1">*</span>}
+              <span className="ml-2 text-xs text-slate-500">object</span>
+            </h4>
+            <ChevronDown className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
           </div>
+          
+          {isExpanded && (
+            <div className="p-3 space-y-3">
+              {Object.entries(fieldSchema.properties || {}).map(([propName, propSchema]) => 
+                renderFormField(propName, propSchema as SchemaProperty, fullPath)
+              )}
+            </div>
+          )}
         </div>
       );
     } else if (fieldSchema.type === "array") {
-      // For simplicity, we're not handling complex arrays - would need more advanced UI
+      // For array of strings, show a simple UI that allows adding strings
+      if (fieldSchema.items?.type === "string") {
+        const arrayValue = Array.isArray(currentValue) ? currentValue : [];
+        
+        return (
+          <div key={fullPath} className="mb-3">
+            <div className="flex justify-between items-center mb-1">
+              <Label className="block text-sm flex items-center">
+                {fieldName} {isRequired && <span className="text-red-500 ml-1">*</span>}
+                <span className="ml-2 text-xs text-slate-400">array of strings</span>
+              </Label>
+              <Button 
+                type="button"
+                variant="outline" 
+                size="sm"
+                onClick={() => setValue([...arrayValue, ""])}
+                className="h-6 text-xs"
+              >
+                ADD STRING
+              </Button>
+            </div>
+            {arrayValue.map((value, index) => (
+              <div key={index} className="flex mb-2">
+                <Input
+                  value={value}
+                  onChange={(e) => {
+                    const newArray = [...arrayValue];
+                    newArray[index] = e.target.value;
+                    setValue(newArray);
+                  }}
+                  className={`flex-1 ${isRequired ? "border-red-200" : ""}`}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => {
+                    const newArray = arrayValue.filter((_, i) => i !== index);
+                    setValue(newArray);
+                  }}
+                  className="ml-2 h-10 w-10"
+                >
+                  <span className="sr-only">Remove</span>
+                  <span>×</span>
+                </Button>
+              </div>
+            ))}
+            {arrayValue.length === 0 && (
+              <div className="text-sm text-slate-500 border border-dashed border-slate-300 rounded-md p-3 text-center">
+                No items added yet
+              </div>
+            )}
+          </div>
+        );
+      }
+      
+      // For array of objects, create a more complex UI
+      if (fieldSchema.items?.type === "object") {
+        const arrayValue = Array.isArray(currentValue) ? currentValue : [];
+        
+        return (
+          <div key={fullPath} className="mb-3">
+            <div className="flex justify-between items-center mb-1">
+              <Label className="block text-sm flex items-center">
+                {fieldName} {isRequired && <span className="text-red-500 ml-1">*</span>}
+                <span className="ml-2 text-xs text-slate-400">array of objects</span>
+              </Label>
+              <Button 
+                type="button"
+                variant="outline" 
+                size="sm"
+                onClick={() => setValue([...arrayValue, createTemplateFromSchema(fieldSchema.items)])}
+                className="h-6 text-xs"
+              >
+                ADD OBJECT
+              </Button>
+            </div>
+            {arrayValue.map((_, index) => (
+              <div key={index} className="mb-2 border border-slate-200 rounded-md p-2">
+                <div className="flex justify-between items-center mb-2">
+                  <h5 className="text-sm font-medium">Item {index + 1}</h5>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const newArray = arrayValue.filter((_, i) => i !== index);
+                      setValue(newArray);
+                    }}
+                    className="h-6 text-xs"
+                  >
+                    Remove
+                  </Button>
+                </div>
+                <div className="pl-3 border-l-2 border-slate-200">
+                  {Object.entries(fieldSchema.items?.properties || {}).map(([propName, propSchema]) => 
+                    renderFormField(
+                      propName, 
+                      propSchema as SchemaProperty, 
+                      `${fullPath}[${index}]`
+                    )
+                  )}
+                </div>
+              </div>
+            ))}
+            {arrayValue.length === 0 && (
+              <div className="text-sm text-slate-500 border border-dashed border-slate-300 rounded-md p-3 text-center">
+                No items added yet
+              </div>
+            )}
+          </div>
+        );
+      }
+      
+      // Fallback for other array types
       return (
         <div key={fullPath} className="mb-2">
-          <Label className="block text-xs mb-1 flex items-center">
+          <Label className="block text-sm mb-1 flex items-center">
             {fieldName} {isRequired && <span className="text-red-500 ml-1">*</span>}
+            <span className="ml-2 text-xs text-slate-400">array</span>
           </Label>
           <Textarea 
             value={JSON.stringify(currentValue || [], null, 2)}
@@ -282,7 +425,6 @@ export const RequestPanel: React.FC<{
                 setValue(arrayValue);
               } catch (error) {
                 // Handle invalid JSON
-                console.error("Invalid JSON for array value", error);
               }
             }}
             placeholder={`[${fieldSchema.items?.type || ""}]`}
@@ -293,9 +435,10 @@ export const RequestPanel: React.FC<{
     } else if (fieldSchema.type === "string" && fieldSchema.enum) {
       // Render select for enum fields
       return (
-        <div key={fullPath} className="mb-2">
-          <Label className="block text-xs mb-1 flex items-center">
+        <div key={fullPath} className="mb-3">
+          <Label className="block text-sm mb-1 flex items-center">
             {fieldName} {isRequired && <span className="text-red-500 ml-1">*</span>}
+            <span className="ml-2 text-xs text-slate-400">string</span>
             {fieldSchema.description && (
               <Popover>
                 <PopoverTrigger asChild>
@@ -325,11 +468,12 @@ export const RequestPanel: React.FC<{
         </div>
       );
     } else if (fieldSchema.type === "boolean") {
-      // Render checkbox or select for boolean
+      // Render select for boolean
       return (
-        <div key={fullPath} className="mb-2">
-          <Label className="block text-xs mb-1 flex items-center">
+        <div key={fullPath} className="mb-3">
+          <Label className="block text-sm mb-1 flex items-center">
             {fieldName} {isRequired && <span className="text-red-500 ml-1">*</span>}
+            <span className="ml-2 text-xs text-slate-400">boolean</span>
           </Label>
           <Select 
             value={currentValue?.toString() || "false"} 
@@ -348,15 +492,16 @@ export const RequestPanel: React.FC<{
     } else {
       // Default input for string, number, integer
       let inputType = "text";
+      let typeLabel = fieldSchema.type;
       if (fieldSchema.type === "integer" || fieldSchema.type === "number") {
         inputType = "number";
       }
       
       return (
-        <div key={fullPath} className="mb-2">
-          <Label className="block text-xs mb-1 flex items-center">
+        <div key={fullPath} className="mb-3">
+          <Label className="block text-sm mb-1 flex items-center">
             {fieldName} {isRequired && <span className="text-red-500 ml-1">*</span>}
-            <span className="ml-1 text-slate-400">{fieldSchema.type}</span>
+            <span className="ml-2 text-xs text-slate-400">{typeLabel}</span>
             {fieldSchema.description && (
               <Popover>
                 <PopoverTrigger asChild>
@@ -387,7 +532,7 @@ export const RequestPanel: React.FC<{
         <div className="mt-2 text-sm font-mono break-all">{url}</div>
       </div>
       
-      <Tabs defaultValue="params" className="w-full">
+      <Tabs defaultValue="body" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="params">Parameters</TabsTrigger>
           <TabsTrigger value="headers">Headers</TabsTrigger>
@@ -402,15 +547,18 @@ export const RequestPanel: React.FC<{
         <TabsContent value="params" className="p-4">
           {Object.keys(pathParams).length > 0 && (
             <div className="mb-4">
-              <h4 className="text-sm font-medium mb-2">Path Parameters</h4>
+              <h4 className="text-sm font-medium mb-3">Path Parameters</h4>
               {Object.entries(pathParams).map(([key, value]) => {
                 const paramSchema = selectedEndpoint.path_params?.[key];
                 const isRequired = paramSchema?.required;
                 
                 return (
-                  <div key={key} className="mb-2">
-                    <Label className="block text-xs mb-1 flex items-center">
+                  <div key={key} className="mb-3">
+                    <Label className="block text-sm mb-1 flex items-center">
                       {key} {isRequired && <span className="text-red-500 ml-1">*</span>}
+                      <span className="ml-2 text-xs text-slate-400">
+                        {paramSchema?.schema?.type || "string"}
+                      </span>
                     </Label>
                     <Input
                       value={value}
@@ -426,15 +574,18 @@ export const RequestPanel: React.FC<{
           
           {Object.keys(queryParams).length > 0 && (
             <div>
-              <h4 className="text-sm font-medium mb-2">Query Parameters</h4>
+              <h4 className="text-sm font-medium mb-3">Query Parameters</h4>
               {Object.entries(queryParams).map(([key, value]) => {
                 const paramSchema = selectedEndpoint.queries?.[key];
                 const isRequired = paramSchema?.required;
                 
                 return (
-                  <div key={key} className="mb-2">
-                    <Label className="block text-xs mb-1 flex items-center">
+                  <div key={key} className="mb-3">
+                    <Label className="block text-sm mb-1 flex items-center">
                       {key} {isRequired && <span className="text-red-500 ml-1">*</span>}
+                      <span className="ml-2 text-xs text-slate-400">
+                        {paramSchema?.schema?.type || "string"}
+                      </span>
                     </Label>
                     <Input
                       value={value}
@@ -449,12 +600,14 @@ export const RequestPanel: React.FC<{
           )}
           
           {Object.keys(pathParams).length === 0 && Object.keys(queryParams).length === 0 && (
-            <div className="text-sm text-slate-500">No parameters for this endpoint</div>
+            <div className="text-sm text-slate-500 p-4 border border-dashed border-slate-200 rounded-md text-center">
+              No parameters for this endpoint
+            </div>
           )}
         </TabsContent>
         
         <TabsContent value="headers" className="p-4">
-          <div className="space-y-2">
+          <div className="space-y-3">
             {Object.entries(headers).map(([key, value], index) => (
               <div key={index} className="flex gap-2">
                 <Input
@@ -508,23 +661,38 @@ export const RequestPanel: React.FC<{
           {["POST", "PUT", "PATCH"].includes(selectedEndpoint.method) ? (
             <div>
               {bodySchema && bodySchema.properties ? (
-                <div className="mb-4 space-y-4">
-                  <h4 className="text-sm font-medium mb-2">Body Parameters</h4>
+                <div className="space-y-4">
+                  {selectedEndpoint.request_body?.description && (
+                    <div className="mb-4 text-sm text-slate-600">
+                      {selectedEndpoint.request_body?.description}
+                    </div>
+                  )}
+                  
                   {Object.entries(bodySchema.properties).map(([fieldName, fieldSchema]) => 
                     renderFormField(fieldName, fieldSchema as SchemaProperty)
                   )}
                 </div>
               ) : (
-                <textarea
-                  value={bodyContent}
-                  onChange={(e) => setBodyContent(e.target.value)}
-                  placeholder="Enter JSON body"
-                  className="w-full h-64 p-2 font-mono text-sm border border-slate-300 rounded-md"
-                />
+                <div className="space-y-2">
+                  <Label className="block text-sm">Raw JSON</Label>
+                  <Textarea
+                    value={bodyContent}
+                    onChange={(e) => {
+                      setBodyContent(e.target.value);
+                      try {
+                        setBodyFormValues(JSON.parse(e.target.value));
+                      } catch (err) {
+                        // Handle invalid JSON
+                      }
+                    }}
+                    placeholder="Enter JSON body"
+                    className="w-full h-64 font-mono text-sm"
+                  />
+                </div>
               )}
             </div>
           ) : (
-            <div className="text-sm text-slate-500">
+            <div className="text-sm text-slate-500 p-4 border border-dashed border-slate-200 rounded-md text-center">
               No body allowed for {selectedEndpoint.method} requests
             </div>
           )}

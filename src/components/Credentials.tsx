@@ -1,8 +1,8 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Copy } from "lucide-react";
+import { Copy, Lock } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
 interface CredentialsProps {
@@ -36,24 +36,31 @@ export const Credentials: React.FC<CredentialsProps> = ({
   
   return (
     <div className="mb-3">
-      <div className="flex justify-between items-center mb-1">
-        <h3 className="text-xs font-medium text-slate-500 uppercase">AUTHORIZATION</h3>
-        <span className="text-xs text-slate-500">{type}</span>
+      <div className="flex justify-between items-center mb-2">
+        <h3 className="text-sm font-medium">CREDENTIALS</h3>
+        <span className="text-sm text-slate-500 uppercase">{type}</span>
       </div>
-      <div className="flex">
-        <Input 
-          value={token} 
-          onChange={handleTokenChange}
-          className="font-mono text-sm"
-        />
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          onClick={copyToClipboard} 
-          className="ml-1"
-        >
-          <Copy className="h-4 w-4" />
-        </Button>
+      <div className="p-4 border rounded-md bg-white mb-2">
+        <div className="text-gray-500 mb-2 text-center">{type}</div>
+        <div className="flex items-center border rounded relative">
+          <Input 
+            value={token} 
+            onChange={handleTokenChange}
+            className="font-mono border-0 shadow-none py-2 pl-16 pr-8"
+            placeholder="Enter bearer token"
+          />
+          <div className="absolute left-0 top-0 bottom-0 flex items-center px-2 text-sm text-gray-600">
+            Bearer
+          </div>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={copyToClipboard} 
+            className="absolute right-1 top-1/2 -translate-y-1/2"
+          >
+            <Lock className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
     </div>
   );
