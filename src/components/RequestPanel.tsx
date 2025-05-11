@@ -16,7 +16,17 @@ export const RequestPanel: React.FC<{
   onResponse: (data: any, status: number, time: number) => void;
   token?: string;
   onTokenChange?: (token: string) => void;
-}> = ({ onResponse, token, onTokenChange }) => {
+  onParamsChange?: (type: 'body' | 'path' | 'query', params: Record<string, any>) => void;
+  onMethodChange?: React.Dispatch<React.SetStateAction<string>>;
+  onEndpointChange?: React.Dispatch<React.SetStateAction<string>>;
+}> = ({ 
+  onResponse, 
+  token, 
+  onTokenChange, 
+  onParamsChange,
+  onMethodChange,
+  onEndpointChange 
+}) => {
   const { selectedEndpoint, baseUrl, makeRequest } = useApi();
   const [isLoading, setIsLoading] = useState(false);
   const [pathParams, setPathParams] = useState<Record<string, string>>({});
@@ -38,31 +48,73 @@ export const RequestPanel: React.FC<{
     }
   }, [token]);
   
+  // Notify parent component when parameters change
+  useEffect(() => {
+    if (onParamsChange) {
+      onParamsChange('path', pathParams);
+    }
+  }, [pathParams, onParamsChange]);
+
+  useEffect(() => {
+    if (onParamsChange) {
+      onParamsChange('query', queryParams);
+    }
+  }, [queryParams, onParamsChange]);
+
+  useEffect(() => {
+    if (onParamsChange) {
+      onParamsChange('body', bodyFormValues);
+    }
+  }, [bodyFormValues, onParamsChange]);
+
+  // Update method and endpoint in parent component
+  useEffect(() => {
+    if (selectedEndpoint && onMethodChange) {
+      onMethodChange(selectedEndpoint.method);
+    }
+  }, [selectedEndpoint, onMethodChange]);
+
+  useEffect(() => {
+    if (selectedEndpoint && onEndpointChange) {
+      onEndpointChange(selectedEndpoint.path);
+    }
+  }, [selectedEndpoint, onEndpointChange]);
+  
   // Reset form when endpoint changes
   useEffect(() => {
     if (selectedEndpoint) {
       // Initialize path params
       if (selectedEndpoint.path_params) {
-        setPathParams(
-          Object.keys(selectedEndpoint.path_params).reduce(
-            (acc, param) => ({ ...acc, [param]: "" }), 
-            {}
-          )
+        const newPathParams = Object.keys(selectedEndpoint.path_params).reduce(
+          (acc, param) => ({ ...acc, [param]: "" }), 
+          {}
         );
+        setPathParams(newPathParams);
+        if (onParamsChange) {
+          onParamsChange('path', newPathParams);
+        }
       } else {
         setPathParams({});
+        if (onParamsChange) {
+          onParamsChange('path', {});
+        }
       }
       
       // Initialize query params
       if (selectedEndpoint.queries) {
-        setQueryParams(
-          Object.keys(selectedEndpoint.queries).reduce(
-            (acc, param) => ({ ...acc, [param]: "" }), 
-            {}
-          )
+        const newQueryParams = Object.keys(selectedEndpoint.queries).reduce(
+          (acc, param) => ({ ...acc, [param]: "" }), 
+          {}
         );
+        setQueryParams(newQueryParams);
+        if (onParamsChange) {
+          onParamsChange('query', newQueryParams);
+        }
       } else {
         setQueryParams({});
+        if (onParamsChange) {
+          onParamsChange('query', {});
+        }
       }
       
       // Initialize body if it has a schema
@@ -76,13 +128,22 @@ export const RequestPanel: React.FC<{
           const template = createTemplateFromSchema(schema);
           setBodyContent(JSON.stringify(template, null, 2));
           setBodyFormValues(template);
+          if (onParamsChange) {
+            onParamsChange('body', template);
+          }
         } catch (e) {
           setBodyContent("{}");
           setBodyFormValues({});
+          if (onParamsChange) {
+            onParamsChange('body', {});
+          }
         }
       } else {
         setBodyContent("");
         setBodyFormValues({});
+        if (onParamsChange) {
+          onParamsChange('body', {});
+        }
       }
       
       // Default expand categories
@@ -94,7 +155,7 @@ export const RequestPanel: React.FC<{
         setExpandedCategories(newExpandedCategories);
       }
     }
-  }, [selectedEndpoint]);
+  }, [selectedEndpoint, onParamsChange]);
   
   // Toggle category expansion
   const toggleCategory = (category: string) => {
@@ -562,7 +623,13 @@ export const RequestPanel: React.FC<{
                     </Label>
                     <Input
                       value={value}
-                      onChange={(e) => setPathParams(prev => ({ ...prev, [key]: e.target.value }))}
+                      onChange={(e) => {
+                        const newValue = e.target.value;
+                        setPathParams(prev => {
+                          const updated = { ...prev, [key]: newValue };
+                          return updated;
+                        });
+                      }}
                       placeholder={key}
                       className={isRequired ? "border-red-200" : ""}
                     />
@@ -589,7 +656,13 @@ export const RequestPanel: React.FC<{
                     </Label>
                     <Input
                       value={value}
-                      onChange={(e) => setQueryParams(prev => ({ ...prev, [key]: e.target.value }))}
+                      onChange={(e) => {
+                        const newValue = e.target.value;
+                        setQueryParams(prev => {
+                          const updated = { ...prev, [key]: newValue };
+                          return updated;
+                        });
+                      }}
                       placeholder={key}
                       className={isRequired ? "border-red-200" : ""}
                     />
@@ -680,7 +753,11 @@ export const RequestPanel: React.FC<{
                     onChange={(e) => {
                       setBodyContent(e.target.value);
                       try {
-                        setBodyFormValues(JSON.parse(e.target.value));
+                        const newBodyFormValues = JSON.parse(e.target.value);
+                        setBodyFormValues(newBodyFormValues);
+                        if (onParamsChange) {
+                          onParamsChange('body', newBodyFormValues);
+                        }
                       } catch (err) {
                         // Handle invalid JSON
                       }

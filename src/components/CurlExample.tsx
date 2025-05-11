@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, Copy, Check } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
@@ -25,39 +25,57 @@ export const CurlExample: React.FC<CurlExampleProps> = ({
 }) => {
   const [expanded, setExpanded] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [curlCommand, setCurlCommand] = useState("");
   const { toast } = useToast();
   
-  // Process endpoint with path parameters
-  let processedEndpoint = endpoint;
-  if (pathParams) {
-    Object.entries(pathParams).forEach(([key, value]) => {
-      if (value) {
-        processedEndpoint = processedEndpoint.replace(`{${key}}`, encodeURIComponent(String(value)));
-      }
-    });
-  }
+  // Update curl command whenever any prop changes
+  useEffect(() => {
+    // Process endpoint with path parameters
+    let processedEndpoint = endpoint;
+    if (pathParams) {
+      Object.entries(pathParams).forEach(([key, value]) => {
+        if (value) {
+          processedEndpoint = processedEndpoint.replace(`{${key}}`, encodeURIComponent(String(value)));
+        }
+      });
+    }
 
-  // Add query parameters if present
-  const queryString = queryParams 
-    ? Object.entries(queryParams)
-      .filter(([_, value]) => value && value.trim() !== '')
-      .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
-      .join('&')
-    : '';
+    // Add query parameters if present
+    const queryString = queryParams 
+      ? Object.entries(queryParams)
+        .filter(([_, value]) => value && value.trim() !== '')
+        .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+        .join('&')
+      : '';
+      
+    const fullUrl = `${baseUrl}${processedEndpoint}${queryString ? `?${queryString}` : ''}`;
     
-  const fullUrl = `${baseUrl}${processedEndpoint}${queryString ? `?${queryString}` : ''}`;
-  
-  // Generate curl command
-  let curlCommand = `curl --request ${method} \\
-  --url ${fullUrl} \\${Object.entries(headers).map(([key, value]) => `
-  --header '${key}: ${value}' \\`).join('')}`;
-  
-  // Add body if it's a POST, PUT, PATCH
-  if (["POST", "PUT", "PATCH"].includes(method) && bodyParams) {
-    const bodyContent = JSON.stringify(bodyParams, null, 2);
-    curlCommand += `
+    // Generate curl command
+    let command = `curl --request ${method} \\
+  --url ${fullUrl} \\`;
+    
+    // Add headers
+    if (headers && Object.keys(headers).length > 0) {
+      Object.entries(headers).forEach(([key, value]) => {
+        if (key && key.trim() !== '') {
+          command += `
+  --header '${key}: ${value}' \\`;
+        }
+      });
+    }
+    
+    // Add body if it's a POST, PUT, PATCH
+    if (["POST", "PUT", "PATCH"].includes(method) && bodyParams && Object.keys(bodyParams).length > 0) {
+      const bodyContent = JSON.stringify(bodyParams, null, 2);
+      command += `
   --data '${bodyContent}'`;
-  }
+    } else {
+      // Remove trailing backslash if no body
+      command = command.endsWith(' \\') ? command.slice(0, -2) : command;
+    }
+    
+    setCurlCommand(command);
+  }, [method, endpoint, baseUrl, headers, bodyParams, queryParams, pathParams]);
   
   const copyToClipboard = () => {
     navigator.clipboard.writeText(curlCommand);

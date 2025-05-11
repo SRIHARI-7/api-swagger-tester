@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Copy, Lock } from "lucide-react";
+import { Copy } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
 interface CredentialsProps {
@@ -21,7 +21,9 @@ export const Credentials: React.FC<CredentialsProps> = ({
   
   // Update local token when prop changes
   useEffect(() => {
-    setToken(initialToken);
+    if (initialToken !== token) {
+      setToken(initialToken);
+    }
   }, [initialToken]);
   
   const copyToClipboard = () => {

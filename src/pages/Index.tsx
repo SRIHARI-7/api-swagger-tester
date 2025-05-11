@@ -47,6 +47,10 @@ const Index = () => {
     else if (type === 'query') setQueryParams(params as Record<string, string>);
   };
 
+  const handleBaseUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setBaseUrl(e.target.value);
+  };
+
   return (
     <ApiProvider>
       <div className="min-h-screen flex flex-col">
@@ -58,7 +62,7 @@ const Index = () => {
               <span className="text-sm text-slate-500">Base URL:</span>
               <Input 
                 value={baseUrl}
-                onChange={(e) => setBaseUrl(e.target.value)}
+                onChange={handleBaseUrlChange}
                 className="w-64 h-8"
               />
             </div>
